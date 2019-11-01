@@ -12,4 +12,24 @@ namespace Unit
         {
         }
     }
+    public interface IA
+    {
+        void Method1();
+        int Method2();
+    }
+    public class A : IA
+    {
+        public void Method1() { }
+        public virtual int Method2()
+        {
+            return default(int);
+        }
+    }
+    public class B : A
+    {
+        public override int Method2()
+        {
+            return 1;
+        }
+    }
 }

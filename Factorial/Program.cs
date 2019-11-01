@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Factorial
 {
+    public delegate void FactorialIsReady(Factorial f);
     class Program
     {
         static void Main(string[] args)
@@ -19,15 +20,15 @@ namespace Factorial
             f.FactorialInitialized += selector.Select;
             selector.FactorialInProgress += inProgress.FactorialInProgressHandler;
             selector.FactorialIsReady += isReady.FactorialIsReadyHandler;
-            selector.FactorialInvalid += lessZero.FactorialInvalidHandler;
+            selector.FactorialIsInvalid += lessZero.FactorialInvalidHandler;
 
-            f.Initialized();
+            f.Start();
         }
     }
     public class Factorial
     {
-        public delegate void FactorialInitializedHandler(Factorial f);
-        public event FactorialInitializedHandler FactorialInitialized;
+        public delegate void FactorialStartdHandler(Factorial f);
+        public event FactorialStartdHandler FactorialInitialized;
         public int Number;
         public int? Result;
         public int Current;
@@ -37,7 +38,7 @@ namespace Factorial
             Current = Number;
             Result = null;
         }
-        public void Initialized()
+        public void Start()
         {
             FactorialInitialized(this);
         }
@@ -46,43 +47,57 @@ namespace Factorial
     {
         public delegate void FactorialSelected(Factorial f);
         
-        public event FactorialSelected FactorialInvalid;
-        public event FactorialSelected FactorialIsReady;
-        public event FactorialSelected FactorialInProgress;
+        public event FactorialSelected FactorialIsInvalid;
+        public event FactorialSelected FactorialIsZero;
+        public event FactorialSelected FactorialIsSimple;
+        public event FactorialSelected FactorialNeedCalculating;
+        
         public void Select(Factorial f)
         {
             if (f.Number < 0)
             {
-                FactorialInvalid(f);
+                FactorialIsInvalid(f);
             }
-            else
+            else if (f.Number == 0)
             {
-                if (f.Current == 0)
-                {
-                    FactorialIsReady(f);
-                }
-                else
-                {
-                    FactorialInProgress(f);
-                }
+                FactorialIsZero(f);
+            }
+            else if (f.Number > 0 && f.Number <= 2)
+            {
+                FactorialIsSimple(f);
+            }
+            else 
+            {
+                FactorialNeedCalculating(f);
             }
         }
     }
-    public class LessZero
+    public class Invalid
     {
-        public void FactorialInvalidHandler(Factorial f)
+        public void FactorialIsInvalid(Factorial f)
         {
             Console.WriteLine("Invalid value for factorial\n");
         }
     }
-    public class IsReady
+    public class IsZero
     {
-        public void FactorialIsReadyHandler(Factorial f)
+        public event FactorialIsReady IsReady;
+        public void FactorialIsZero(Factorial f)
         {
-            Console.WriteLine("Factorial({0}) = {1}\n",f.Number, f.Result == null ? 1 : f.Result );
+            f.Result = 1;
+            IsReady(f);
         }
     }
-    public class InProgress
+    public class IsSimple
+    {
+        public event FactorialIsReady IsReady;
+        public void FactorialIsSimple(Factorial f)
+        {
+            f.Result = f.Number;
+            IsReady(f);
+        }
+    }
+    public class NeedCalculating
     {
         public delegate void FactorialState(Factorial f);
         public event FactorialState FactorialStateChanged;
@@ -99,6 +114,14 @@ namespace Factorial
             f.Current--;
             Console.WriteLine("In progress");
             FactorialStateChanged(f);
+        }
+    }
+    public class FactorialIteration
+    {
+        public int Steps;
+        public FactorialIteration(Factorial f)
+        {
+            Steps = f.Number - 2;
         }
     }
 }

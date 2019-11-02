@@ -11,16 +11,34 @@ namespace Factorial
     {
         static void Main(string[] args)
         {
-            Factorial f = new Factorial(3);
+            Factorial f = new Factorial(5);
+
             Selector selector = new Selector();
-            LessZero lessZero = new LessZero();
+            Invalid invalid = new Invalid();
+            IsZero isZero = new IsZero();
+            IsSimple isSimple = new IsSimple();
+
+            FactorialCalculating factorialCalculating = new FactorialCalculating();
+            CalculatingSelector calculatingSelector = new CalculatingSelector();
+            Iterator iterator = new Iterator();
+
             IsReady isReady = new IsReady();
-            InProgress inProgress = new InProgress();
-            inProgress.FactorialStateChanged += selector.Select;
+
             f.FactorialInitialized += selector.Select;
-            selector.FactorialInProgress += inProgress.FactorialInProgressHandler;
-            selector.FactorialIsReady += isReady.FactorialIsReadyHandler;
-            selector.FactorialIsInvalid += lessZero.FactorialInvalidHandler;
+
+            selector.FactorialIsInvalid += invalid.FactorialIsInvalid;
+            selector.FactorialIsSimple += isSimple.FactorialIsSimple;
+            selector.FactorialIsZero += isZero.FactorialIsZero;
+            selector.FactorialNeedCalculating += factorialCalculating.FactorialCalculatingPrepare;
+
+            factorialCalculating.IsReady += calculatingSelector.Select;
+
+            calculatingSelector.NeedIteration += iterator.Iterate;
+            iterator.IsReady += calculatingSelector.Select;
+
+            calculatingSelector.IsReady += isReady.FactorialWrite;
+            isZero.IsReady += isReady.FactorialWrite;
+            isSimple.IsReady += isReady.FactorialWrite;
 
             f.Start();
         }
@@ -97,31 +115,56 @@ namespace Factorial
             IsReady(f);
         }
     }
-    public class NeedCalculating
+    public class IsReady
     {
-        public delegate void FactorialState(Factorial f);
-        public event FactorialState FactorialStateChanged;
-        public void FactorialInProgressHandler(Factorial f)
+        public void FactorialWrite(Factorial f)
         {
-            if (f.Result == null)
+            Console.WriteLine("Factorial({0}) = {1}", f.Number, f.Result);
+        }
+    }
+    public delegate void FactorialCalculatingHandler(FactorialCalculating fc);
+    public class FactorialCalculating
+    {
+        public event FactorialCalculatingHandler IsReady;
+        public int Steps;
+        public Factorial Factorial { get; set; }
+        public void FactorialCalculatingPrepare(Factorial f)
+        {
+            Steps = f.Number - 1;
+            Factorial = f;
+            f.Result = 1;
+            Console.WriteLine("Calculating prepared");
+            IsReady(this);
+        }
+    }
+    public class CalculatingSelector
+    {
+        public event FactorialCalculatingHandler NeedIteration;
+        public event FactorialIsReady IsReady;
+        public void Select(FactorialCalculating fc)
+        {
+            if (fc.Steps > 0)
             {
-                f.Result = f.Current;
+                Console.WriteLine("Calculating continued");
+                NeedIteration(fc);
             }
             else
             {
-                f.Result *= f.Current;
+                Console.WriteLine("Calculating finished");
+                IsReady(fc.Factorial);
             }
-            f.Current--;
-            Console.WriteLine("In progress");
-            FactorialStateChanged(f);
+            
         }
     }
-    public class FactorialIteration
+    public class Iterator
     {
-        public int Steps;
-        public FactorialIteration(Factorial f)
+        public event FactorialCalculatingHandler IsReady;
+        public void Iterate(FactorialCalculating fc)
         {
-            Steps = f.Number - 2;
+            fc.Factorial.Result *= (fc.Steps + 1);
+            fc.Steps--;
+            Console.WriteLine("Calculating iterated");
+            IsReady(fc);
         }
     }
 }

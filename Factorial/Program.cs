@@ -12,7 +12,8 @@ namespace Factorial
     {
         static void Main(string[] args)
         {
-            Factorial f = new Factorial(5);
+            Factorial f1 = new Factorial(5);
+            Factorial f2 = new Factorial(3);
 
             Selector selector = new Selector();
             Invalid invalid = new Invalid();
@@ -25,7 +26,8 @@ namespace Factorial
 
             IsReady isReady = new IsReady();
 
-            f.Initialized += selector.Select;
+            f1.Initialized += selector.Select;
+            f2.Initialized += selector.Select;
 
             selector.FactorialIsInvalid += invalid.FactorialIsInvalid;
             selector.FactorialIsSimple += isSimple.FactorialIsSimple;
@@ -41,7 +43,8 @@ namespace Factorial
             isZero.IsReady += isReady.FactorialWrite;
             isSimple.IsReady += isReady.FactorialWrite;
 
-            f.Start();
+            f1.Start();
+            f2.Start();
         }
     }
     public class Factorial

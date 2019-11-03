@@ -31,15 +31,4 @@ namespace MSTests
             Assert.IsInstanceOfType(x, typeof(IA));
         }
     }
-    [TestClass]
-    public class InheritMethods
-    {
-        [TestMethod]
-        public void MethodA()
-        {
-            var x = new A();
-            var y = new B();
-            Assert.Equals(x.Method1, y.Method1);
-        }
-    }
 }

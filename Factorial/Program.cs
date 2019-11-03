@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace Factorial
 {
-    public delegate void FactorialIsReady(Factorial f);
+    public delegate void FactorialStateHandler(Factorial f);
+    public delegate void FactorialCalculatingStateHandler(FactorialCalculating fc);
     class Program
     {
         static void Main(string[] args)
@@ -24,7 +25,7 @@ namespace Factorial
 
             IsReady isReady = new IsReady();
 
-            f.FactorialInitialized += selector.Select;
+            f.Initialized += selector.Select;
 
             selector.FactorialIsInvalid += invalid.FactorialIsInvalid;
             selector.FactorialIsSimple += isSimple.FactorialIsSimple;
@@ -45,30 +46,25 @@ namespace Factorial
     }
     public class Factorial
     {
-        public delegate void FactorialStartdHandler(Factorial f);
-        public event FactorialStartdHandler FactorialInitialized;
-        public int Number;
-        public int? Result;
-        public int Current;
+        public event FactorialStateHandler Initialized;
+        public int Number { get; set; }
+        public int? Result { get; set; }
         public Factorial(int n)
         {
             Number = n;
-            Current = Number;
             Result = null;
         }
         public void Start()
         {
-            FactorialInitialized(this);
+            Initialized(this);
         }
     }
     public class Selector
     {
-        public delegate void FactorialSelected(Factorial f);
-        
-        public event FactorialSelected FactorialIsInvalid;
-        public event FactorialSelected FactorialIsZero;
-        public event FactorialSelected FactorialIsSimple;
-        public event FactorialSelected FactorialNeedCalculating;
+        public event FactorialStateHandler FactorialIsInvalid;
+        public event FactorialStateHandler FactorialIsZero;
+        public event FactorialStateHandler FactorialIsSimple;
+        public event FactorialStateHandler FactorialNeedCalculating;
         
         public void Select(Factorial f)
         {
@@ -99,7 +95,7 @@ namespace Factorial
     }
     public class IsZero
     {
-        public event FactorialIsReady IsReady;
+        public event FactorialStateHandler IsReady;
         public void FactorialIsZero(Factorial f)
         {
             f.Result = 1;
@@ -108,7 +104,7 @@ namespace Factorial
     }
     public class IsSimple
     {
-        public event FactorialIsReady IsReady;
+        public event FactorialStateHandler IsReady;
         public void FactorialIsSimple(Factorial f)
         {
             f.Result = f.Number;
@@ -122,11 +118,11 @@ namespace Factorial
             Console.WriteLine("Factorial({0}) = {1}", f.Number, f.Result);
         }
     }
-    public delegate void FactorialCalculatingHandler(FactorialCalculating fc);
+    
     public class FactorialCalculating
     {
-        public event FactorialCalculatingHandler IsReady;
-        public int Steps;
+        public event FactorialCalculatingStateHandler IsReady;
+        public int Steps { get; set; }
         public Factorial Factorial { get; set; }
         public void FactorialCalculatingPrepare(Factorial f)
         {
@@ -139,8 +135,8 @@ namespace Factorial
     }
     public class CalculatingSelector
     {
-        public event FactorialCalculatingHandler NeedIteration;
-        public event FactorialIsReady IsReady;
+        public event FactorialCalculatingStateHandler NeedIteration;
+        public event FactorialStateHandler IsReady;
         public void Select(FactorialCalculating fc)
         {
             if (fc.Steps > 0)
@@ -153,12 +149,11 @@ namespace Factorial
                 Console.WriteLine("Calculating finished");
                 IsReady(fc.Factorial);
             }
-            
         }
     }
     public class Iterator
     {
-        public event FactorialCalculatingHandler IsReady;
+        public event FactorialCalculatingStateHandler IsReady;
         public void Iterate(FactorialCalculating fc)
         {
             fc.Factorial.Result *= (fc.Steps + 1);
